@@ -37,6 +37,7 @@ public class TaskBlock : MonoBehaviour, IPointerDownHandler, IPointerUpHandler {
 	//target indentation (ignore when dragging)
 	Vector2 targetOffsetMin = Vector2.zero, targetOffsetMax = Vector2.zero;
 	public Vector2 GetTargetOffsetMin() { return targetOffsetMin; }
+	public Vector2 GetTargetOffsetMax() { return targetOffsetMax; }
 
 	#endregion
 
@@ -54,9 +55,9 @@ public class TaskBlock : MonoBehaviour, IPointerDownHandler, IPointerUpHandler {
 
 		//set this block right above blocks.Key and inside parent (blocks.Value)
 		KeyValuePair<TaskBlock, TaskBlock> blocks = BlockMaster.instance.GetBlockAtLocation(transform.position);
-		string k = blocks.Key != null ? blocks.Key.GetBlockID() : "none";
-		string v = blocks.Value != null ? blocks.Value.GetBlockID() : "none";
-		Debug.Log($"found block: {k}, {v}");
+		//string k = blocks.Key != null ? blocks.Key.GetBlockID() : "none";
+		//string v = blocks.Value != null ? blocks.Value.GetBlockID() : "none";
+		//Debug.Log($"found block: {k}, {v}");
 		BlockMaster.instance.RearrangeBlocks(this, blocks.Key, blocks.Value);
 
 		//NOTE: for some reason, OnPointerUp doesn't work properly here
@@ -149,7 +150,7 @@ public class TaskBlock : MonoBehaviour, IPointerDownHandler, IPointerUpHandler {
 				GetComponent<RectTransform>().anchoredPosition.x, heightOffset);
 		} else {
 			BlockMaster.instance.SetShadow(GetComponent<RectTransform>().sizeDelta, heightOffset,
-				(nestingIndex + 1f) * NESTING_WIDTH);
+				(nestingIndex + 1f) * NESTING_WIDTH, GetTargetOffsetMax().x);
 		}
 
 		RecalculateIndent();

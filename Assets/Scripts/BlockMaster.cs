@@ -56,7 +56,7 @@ public class BlockMaster : MonoBehaviour {
 		blocks.Insert(0, newBlockObj.GetComponent<TaskBlock>());
 		RecalculateBlocks();
 	}
-	public void SetShadow(Vector2 sizeDelta, float heightOffset, float leftOffset) {
+	public void SetShadow(Vector2 sizeDelta, float heightOffset, float leftOffset, float rightOffset) {
 		if (!blockShadow.gameObject.activeInHierarchy)
 			blockShadow.gameObject.SetActive(true);
 
@@ -65,6 +65,7 @@ public class BlockMaster : MonoBehaviour {
 
 		//left offset
 		blockShadow.offsetMin = new Vector2(leftOffset, blockShadow.offsetMin.y);
+		blockShadow.offsetMax = new Vector2(rightOffset, blockShadow.offsetMax.y);
 	}
 	public void RecalculateBlocks() {
 		//re-index all blocks' heights
@@ -74,7 +75,7 @@ public class BlockMaster : MonoBehaviour {
 			t.RecalculateBlock(heightOffset);
 			if (t.GetIsDragged()) {
 				SetShadow(t.GetComponent<RectTransform>().sizeDelta, heightOffset,
-					(t.GetNestingIndex() + 1f) * TaskBlock.NESTING_WIDTH);
+					(t.GetNestingIndex() + 1f) * TaskBlock.NESTING_WIDTH, t.GetTargetOffsetMax().x);
 			}
 			totalContentHeight += t.GetHeight() + BLOCK_SPACING;
 		}
