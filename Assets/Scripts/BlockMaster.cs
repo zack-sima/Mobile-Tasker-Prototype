@@ -89,7 +89,7 @@ public class BlockMaster : MonoBehaviour {
 		TaskBlock previousBlock = null;
 		foreach (TaskBlock b in blocks) {
 			if (b.GetIsDragged()) { continue; }
-			if (b.transform.position.y < blockPosition.y) {
+			if (b.transform.position.y < blockPosition.y + 10) {
 				//look through previous block's children
 				if (previousBlock != null) {
 					KeyValuePair<TaskBlock, TaskBlock> blocksToReturn = previousBlock.GetBlockAtPosition(blockPosition);

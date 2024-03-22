@@ -1,0 +1,43 @@
+//Google Script
+
+// A simple GET request example
+function doGet(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Sheet1'); // Change 'Sheet1' to your sheet's name
+  const data = sheet.getDataRange().getValues();
+  const json = JSON.stringify(data);
+  return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+    var result;
+
+    try {
+        var sheetName = 'Sheet1';
+        var ss = SpreadsheetApp.getActiveSpreadsheet();
+        var sheet = ss.getSheetByName(sheetName);
+        // For form data, use e.parameter instead of parsing e.postData.contents
+        var name = e.parameter.name;
+        var score = e.parameter.score;
+        sheet.appendRow([name, score]);
+        result = { 'status': 'success', 'row': sheet.getLastRow() };
+    } catch (err) {
+        result = { 'status': 'error', 'message': err.toString() };
+    }
+
+    return ContentService.createTextOutput(JSON.stringify(result))
+        .setMimeType(ContentService.MimeType.JSON);
+}
+
+
+/////// SETUP ///////
+
+Create a Google Apps Script:
+
+Go to Extensions > Apps Script from within your Google Sheets.
+
+Replace the content of the script editor with a script that processes GET and POST requests (above).
+
+Save and name your project.
+
+Publish the script as a web app (New Deployment > Select type 'Web app' > Deploy). Set access to "Anyone, even anonymous" for testing purposes. Note the provided URL, which you will use in your Unity script.

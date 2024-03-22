@@ -74,14 +74,14 @@ public class TaskBlock : MonoBehaviour, IPointerDownHandler, IPointerUpHandler {
 	//recursively tries to get children blocks' positions (and checks if position's X
 	///  warrents a traversal into children depth) to find the block to return
 	public KeyValuePair<TaskBlock, TaskBlock> GetBlockAtPosition(Vector2 position) {
-		if (position.x < transform.position.x) return new(null, null);
+		if (position.x < transform.position.x + 10) return new(null, null);
 
 		//find first child with position y < position, then go to previous child and
 		//  recursively call GetBlockAtPosition on its children
 		TaskBlock previousBlock = null;
 		foreach (TaskBlock b in children) {
 			if (b.GetIsDragged()) continue;
-			if (b.transform.position.y < position.y) {
+			if (b.transform.position.y < position.y + 10) {
 				//look through previous block's children
 				if (previousBlock != null) {
 					KeyValuePair<TaskBlock, TaskBlock> blocksToReturn = previousBlock.GetBlockAtPosition(position);
