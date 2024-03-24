@@ -1,34 +1,63 @@
 //Google Script
 
-// A simple GET request example
+// Modified GET request example to fetch specific data based on channelId
 function doGet(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('Sheet1'); // Change 'Sheet1' to your sheet's name
-  const data = sheet.getDataRange().getValues();
-  const json = JSON.stringify(data);
+  const channelId = e.parameter.channelId;
+  const data = sheet.getDataRange().getValues(); // Fetch all the data in the sheet
+  let found = false;
+  let requiredData = [];
+
+  // Loop through the data to find the row with the specified channelId
+  for (let i = 0; i < data.length; i++) {
+    if (data[i][0] === channelId) {
+      requiredData = [data[i][1]]; // Get the second column's value of the matched row
+      found = true;
+      break;
+    }
+  }
+
+  const json = JSON.stringify(found ? requiredData : 'Channel not found');
   return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
 }
 
+// Modified POST request to update or append data based on channelId
 function doPost(e) {
-    var result;
+  var result;
 
-    try {
-        var sheetName = 'Sheet1';
-        var ss = SpreadsheetApp.getActiveSpreadsheet();
-        var sheet = ss.getSheetByName(sheetName);
-        // For form data, use e.parameter instead of parsing e.postData.contents
-        var name = e.parameter.name;
-        var score = e.parameter.score;
-        sheet.appendRow([name, score]);
-        result = { 'status': 'success', 'row': sheet.getLastRow() };
-    } catch (err) {
-        result = { 'status': 'error', 'message': err.toString() };
+  try {
+    var sheetName = 'Sheet1';
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(sheetName);
+    var channelId = e.parameter.channelId;
+    var jsonData = e.parameter.jsonData;
+    var data = sheet.getDataRange().getValues();
+    var found = false;
+
+    // Loop through the sheet to find if the channelId exists
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] === channelId) {
+        // ChannelId found, update the corresponding second column
+        sheet.getRange(i + 1, 2).setValue(jsonData);
+        found = true;
+        break;
+      }
     }
 
-    return ContentService.createTextOutput(JSON.stringify(result))
-        .setMimeType(ContentService.MimeType.JSON);
-}
+    // If the channelId is not found, append a new row
+    if (!found) {
+      sheet.appendRow([channelId, jsonData]);
+    }
 
+    result = { 'status': 'success', 'row': sheet.getLastRow() };
+  } catch (err) {
+    result = { 'status': 'error', 'message': err.toString() };
+  }
+
+  return ContentService.createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+}
 
 /////// SETUP ///////
 

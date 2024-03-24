@@ -262,7 +262,6 @@ public class TaskBlock : MonoBehaviour {
 		if (isDragged) {
 			UpdateDragging();
 		}
-
 		if (textInputField.isFocused)
 			OnInputFieldChanged();
 	}

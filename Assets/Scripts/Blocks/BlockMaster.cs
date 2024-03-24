@@ -46,6 +46,13 @@ public class BlockMaster : MonoBehaviour {
 	[SerializeField] private RectTransform loadingScreen;
 	public void SetLoadingScreen(bool isOn) { loadingScreen.gameObject.SetActive(isOn); }
 
+	[SerializeField] private TMP_InputField titleInputField;
+	public string GetTitle() { return titleInputField.text; }
+	public void SetTitle(string t) { titleInputField.text = t; }
+
+	[SerializeField] private DataUpload uploader;
+	[SerializeField] private DataDownload downloader;
+
 	#endregion
 
 	#region Members
@@ -127,7 +134,15 @@ public class BlockMaster : MonoBehaviour {
 		if (!ChannelSaveLoad.LoadChannel(this, "test_save")) {
 			//TODO: if save data doesn't exist, automatically try to download from online
 		}
+		ChannelLoaded();
 		initializing = false;
+	}
+	public void ChannelLoaded() {
+		StartCoroutine(ChannelLoadedCoroutine());
+	}
+	private IEnumerator ChannelLoadedCoroutine() {
+		for (int i = 0; i < 2; i++) yield return new WaitForEndOfFrame();
+		RecalculateBlocks(true);
 	}
 	//NOTE: should be called whenever some sort of data has been changed (drag, input exit, etc)
 	// and should periodically be called as well
@@ -135,7 +150,7 @@ public class BlockMaster : MonoBehaviour {
 		//don't save "changes" when loading in the data
 		if (initializing) return;
 
-		ChannelSaveLoad.SaveChannel(blocks, "test_save");
+		ChannelSaveLoad.SaveChannel(blocks, "test_save", GetTitle());
 		Debug.Log("saved data");
 	}
 	public void TryClearData() {
@@ -151,14 +166,18 @@ public class BlockMaster : MonoBehaviour {
 		}
 		blocks.Clear();
 		SaveData();
+
 		deleteAllBlocksScreen.gameObject.SetActive(false);
+		ShowNormalBar();
 	}
 	public void TryUploadData() {
 		//TODO: calls UI to verify user wants to update online data
+		uploader.SendData("test_save", ChannelSaveLoad.CreateChannelString(blocks, GetTitle()));
 	}
 	public void TryDownloadData() {
 		//TODO: confirms with user whether they want to override current data
 		//initialization skips this and downloads directly if local data doesn't exist
+		downloader.GetData("test_save");
 	}
 
 	#endregion

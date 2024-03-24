@@ -24,13 +24,21 @@ public static class ChannelSaveLoad {
 			return MyJsonUtility.ToJson(typeof(ChannelData), this);
 		}
 	}
-	public static void SaveChannel(List<TaskBlock> blocks, string channelName) {
-		ChannelData data = new() { channelName = channelName, blocks = new() };
+	//TODO: channelId should be the given ID of the channel when it is created;
+	//channelName can be changed and is displayed
+	public static void SaveChannel(List<TaskBlock> blocks, string channelId, string channelName) {
+		//TODO: save in a more coherent manner
+		PlayerPrefs.SetString(channelId, CreateChannelString(blocks, channelName));
+	}
+	public static string CreateChannelString(List<TaskBlock> blocks, string channelName) {
+		ChannelData data = new() {
+			channelName = channelName,
+			blocks = new()
+		};
 		foreach (TaskBlock b in blocks) {
 			data.blocks.Add(CreateBlockWithChildren(data, b));
 		}
-		//TODO: save in a more coherent manner
-		PlayerPrefs.SetString(channelName, data.ToString());
+		return data.ToString();
 	}
 	//helper recursive function
 	private static SaveBlock CreateBlockWithChildren(ChannelData data, TaskBlock parent) {
@@ -45,19 +53,21 @@ public static class ChannelSaveLoad {
 		return save;
 	}
 	public static bool LoadChannel(BlockMaster master, string channelName) {
-		master.ClearData();
 		string dataString = PlayerPrefs.GetString(channelName);
 		if (dataString == "") return false;
 
 		return LoadChannelWithString(master, dataString);
 	}
 	public static bool LoadChannelWithString(BlockMaster master, string dataString) {
+		master.ClearData();
 		ChannelData data = (ChannelData)MyJsonUtility.FromJson(typeof(ChannelData), dataString);
 		if (data == null || data.blocks == null) return false;
 		foreach (SaveBlock s in data.blocks) {
 			master.GetBlocks().Add(LoadBlockAndAllChildren(master, s));
 		}
+		master.SetTitle(data.channelName);
 		master.RecalculateBlocks(recheckInputs: true);
+		master.ChannelLoaded();
 		return true;
 	}
 	//helper recursive function
