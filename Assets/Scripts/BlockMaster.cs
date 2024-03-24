@@ -24,17 +24,22 @@ public class BlockMaster : MonoBehaviour {
 
 	#endregion
 
-	#region References & Getters
+	#region References
 
 	[SerializeField] private Canvas mainCanvas;
 	public Canvas GetMainCanvas() { return mainCanvas; }
 	public float GetCanvasScaleFactor() { return mainCanvas.scaleFactor; }
 
 	[SerializeField] private ScrollRect scrollViewParent;
+	public ScrollRect GetScrollRect() { return scrollViewParent; }
+
 	[SerializeField] private RectTransform scrollViewContent;
 
 	//shows where the block would go with indents when a block is dragged
 	[SerializeField] private RectTransform blockShadow;
+
+	//shows up when delete block is called to confirm
+	[SerializeField] private RectTransform deleteBlockScreen;
 
 	#endregion
 
@@ -44,18 +49,47 @@ public class BlockMaster : MonoBehaviour {
 	private List<TaskBlock> blocks = new();
 	public List<TaskBlock> GetBlocks() { return blocks; }
 
+	//whether to show delete button, set clock button, etc...
+	private bool showOptions = false;
+	public bool GetShowOptions() { return showOptions; }
+
 	#endregion
 
+	#region Button Callbacks
+
+	private TaskBlock blockToDelete = null;
+	public void DeleteBlockCalled(TaskBlock from) {
+		blockToDelete = from;
+		deleteBlockScreen.gameObject.SetActive(true);
+	}
+	public void CancelDeleteBlock() {
+		blockToDelete = null;
+		deleteBlockScreen.gameObject.SetActive(false);
+	}
+	public void ActuallyDeleteBlock() {
+		if (blockToDelete != null)
+			blockToDelete.DeleteBlock();
+		blockToDelete = null;
+		deleteBlockScreen.gameObject.SetActive(false);
+	}
+	public void ToggleOptions() {
+		showOptions = !showOptions;
+
+		foreach (TaskBlock tb in blocks) {
+			tb.ToggleShowOptions(showOptions);
+		}
+	}
 	//called by button; creates empty block in FRONT
 	public void CreateBlock() {
 		GameObject newBlockObj = Instantiate(blockPrefab, scrollViewContent);
 
-		//TODO: temp id set
-		newBlockObj.GetComponent<TaskBlock>().SetBlockID(blocks.Count);
-
 		blocks.Insert(0, newBlockObj.GetComponent<TaskBlock>());
 		RecalculateBlocks();
 	}
+
+	#endregion
+
+
 	public void SetShadow(Vector2 sizeDelta, float heightOffset, float leftOffset, float rightOffset) {
 		if (!blockShadow.gameObject.activeInHierarchy)
 			blockShadow.gameObject.SetActive(true);
@@ -67,9 +101,12 @@ public class BlockMaster : MonoBehaviour {
 		blockShadow.offsetMin = new Vector2(leftOffset, blockShadow.offsetMin.y);
 		blockShadow.offsetMax = new Vector2(rightOffset, blockShadow.offsetMax.y);
 	}
+	public bool GetShadowIsActive() {
+		return blockShadow.gameObject.activeInHierarchy;
+	}
 	public void RecalculateBlocks() {
 		//re-index all blocks' heights
-		float totalContentHeight = TaskBlock.DEFAULT_HEIGHT / 2f - BLOCK_SPACING + BLOCK_TOP_PADDING;
+		float totalContentHeight = -BLOCK_SPACING + BLOCK_TOP_PADDING;
 		foreach (TaskBlock t in blocks) {
 			float heightOffset = -(totalContentHeight + BLOCK_SPACING);
 			t.RecalculateBlock(heightOffset);
@@ -140,6 +177,7 @@ public class BlockMaster : MonoBehaviour {
 			movedBlock.SetParent(null);
 		}
 		movedBlock.RecalculateIndent();
+		movedBlock.UpdateAllInputChildren();
 		foreach (TaskBlock b in movedBlock.GetChildrenList()) {
 			b.RecalculateIndent();
 		}
@@ -156,5 +194,7 @@ public class BlockMaster : MonoBehaviour {
 	}
 	private void Awake() {
 		instance = this;
+
+		Application.targetFrameRate = 60;
 	}
 }
