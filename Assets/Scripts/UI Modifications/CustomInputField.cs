@@ -25,7 +25,6 @@ public class CustomInputField : TMP_InputField {
 		}
 		dimImage.color = Color.white;
 	}
-
 	// Method to set focus to this input field
 	private void SetFocus() {
 		if (EventSystem.current != null) {

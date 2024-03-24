@@ -7,15 +7,12 @@ public class DataUpload : MonoBehaviour {
 	//temp task sheets url
 	public static string dataURL = "https://script.google.com/macros/s/AKfycbwyINAMK-cPZFC5fowl06-6nwxhRxb6ke--MardwIgKQL04eSKPbbeGgAGb61mrYtD45A/exec";
 
-	void Update() {
-		if (Input.GetKeyDown(KeyCode.U)) {
-			SendScore("score", 123123);
-		}
+	public void SendData(string playerName, int score) {
+		StartCoroutine(PostData(playerName, score));
 	}
-	public void SendScore(string playerName, int score) {
-		StartCoroutine(PostScore(playerName, score));
-	}
-	IEnumerator PostScore(string playerName, int score) {
+	IEnumerator PostData(string playerName, int score) {
+		BlockMaster.instance.SetLoadingScreen(true);
+
 		WWWForm form = new WWWForm();
 		form.AddField("name", playerName);
 		form.AddField("score", score.ToString());
@@ -30,5 +27,6 @@ public class DataUpload : MonoBehaviour {
 				Debug.Log(www.downloadHandler.text);
 			}
 		}
+		BlockMaster.instance.SetLoadingScreen(false);
 	}
 }

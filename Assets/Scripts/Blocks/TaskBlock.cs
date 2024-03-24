@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.EventSystems;
 
 public class TaskBlock : MonoBehaviour {
 	//default height of block when created
@@ -42,12 +43,17 @@ public class TaskBlock : MonoBehaviour {
 
 	//if folded, don't render any children and turn folded icon to the side
 	private bool isFolded = false;
+	public bool GetIsFolded() { return isFolded; }
+	public void SetIsFolded(bool f) { isFolded = f; UpdateFold(); }
 
 	#endregion
 
 	#region References
 
 	[SerializeField] private TMP_InputField textInputField;
+	public string GetText() { return textInputField.text; }
+	public void SetText(string t) { textInputField.text = t; }
+
 	[SerializeField] private TMP_Text invisibleTextSizer; //used to determine block height
 	[SerializeField] private Button foldButton;
 	[SerializeField] private List<Button> optionsButtons; //hidden unless options is toggled on
@@ -127,6 +133,10 @@ public class TaskBlock : MonoBehaviour {
 		}
 		OnInputFieldChanged(false);
 		BlockMaster.instance.RecalculateBlocks();
+	}
+	public void OnInputFieldDeselected() {
+		//save changes
+		BlockMaster.instance.SaveData();
 	}
 	public void OnInputFieldChanged(bool recalculate = true) {
 		StartCoroutine(WaitUpdateInputSize(recalculate));

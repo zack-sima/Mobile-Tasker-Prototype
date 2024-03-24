@@ -4,15 +4,11 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 public class DataDownload : MonoBehaviour {
-	void Update() {
-		if (Input.GetKeyDown(KeyCode.D)) {
-			GetScores();
-		}
+	public void GetData() {
+		StartCoroutine(GetDataCoroutine());
 	}
-	public void GetScores() {
-		StartCoroutine(GetScoreCoroutine());
-	}
-	IEnumerator GetScoreCoroutine() {
+	IEnumerator GetDataCoroutine() {
+		BlockMaster.instance.SetLoadingScreen(true);
 		using (UnityWebRequest www = UnityWebRequest.Get(DataUpload.dataURL)) {
 			yield return www.SendWebRequest();
 
@@ -23,5 +19,6 @@ public class DataDownload : MonoBehaviour {
 				// Here you can convert the JSON response to your desired format and use it in your game
 			}
 		}
+		BlockMaster.instance.SetLoadingScreen(false);
 	}
 }
