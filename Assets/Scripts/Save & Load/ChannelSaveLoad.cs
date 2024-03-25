@@ -28,7 +28,15 @@ public static class ChannelSaveLoad {
 	//channelName can be changed and is displayed
 	public static void SaveChannel(BlockMaster master, string channelId) {
 		//TODO: save in a more coherent manner
-		PlayerPrefs.SetString(channelId, CreateChannelString(master));
+		PlayerPrefs.SetString("channel_data_" + channelId, CreateChannelString(master));
+	}
+	//called by ChannelMaster
+	public static void CreateNewEmptyChannel(string channelId, string channelName) {
+		ChannelData data = new() {
+			channelName = channelName,
+			blocks = new()
+		};
+		PlayerPrefs.SetString("channel_data_" + channelId, data.ToString());
 	}
 	public static string CreateChannelString(BlockMaster master) {
 		string channelName = master.GetTitle();
@@ -55,8 +63,21 @@ public static class ChannelSaveLoad {
 		}
 		return save;
 	}
-	public static bool LoadChannel(BlockMaster master, string channelName) {
-		string dataString = PlayerPrefs.GetString(channelName);
+	public static ChannelData GetChannelData(string channelId) {
+		try {
+			ChannelData data = (ChannelData)MyJsonUtility.FromJson(typeof(ChannelData),
+				PlayerPrefs.GetString("channel_data_" + channelId));
+
+			if (data == null || data.blocks == null) return null;
+
+			return data;
+		} catch (System.Exception e) {
+			Debug.LogWarning($"No channel: {e}");
+			return null;
+		}
+	}
+	public static bool LoadChannel(BlockMaster master, string channelId) {
+		string dataString = PlayerPrefs.GetString("channel_data_" + channelId);
 		if (dataString == "") return false;
 
 		return LoadChannelWithString(master, dataString);
@@ -66,7 +87,7 @@ public static class ChannelSaveLoad {
 			ChannelData data = (ChannelData)MyJsonUtility.FromJson(typeof(ChannelData), dataString);
 			if (data == null || data.blocks == null) return false;
 
-			master.ClearData();
+			master.ClearData(withoutSave: true);
 			foreach (SaveBlock s in data.blocks) {
 				master.GetBlocks().Add(LoadBlockAndAllChildren(master, s));
 			}

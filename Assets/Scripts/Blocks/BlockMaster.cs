@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Controls the dragging & arrangement of blocks, and the scroll view on the Main Canvas.
@@ -79,10 +80,20 @@ public class BlockMaster : MonoBehaviour {
 	//backups rows
 	private List<BackupRow> backupRows = new();
 
+	//channel ID for loading channel
+	private string channelId = "test_save";
+
+	//check before allowing uploading
+	private bool canUpload = false;
+
 	#endregion
 
 	#region Button Callbacks
 
+	public void ExitChannel() {
+		SaveData(autoSave: true);
+		SceneManager.LoadScene(0);
+	}
 	public void TryUndo() {
 		UndoStep();
 	}
@@ -201,7 +212,7 @@ public class BlockMaster : MonoBehaviour {
 		backupRows.Clear();
 
 		//create new rows in backup scroll view
-		ChannelBackup.BackupData data = ChannelBackup.GetBackups();
+		ChannelBackup.BackupData data = ChannelBackup.GetBackups(channelId);
 		foreach (KeyValuePair<string, ChannelBackup.SingleBackup> kv in data.backups) {
 			BackupRow r = Instantiate(backupRowPrefab,
 				backupsScrollViewContent).GetComponent<BackupRow>();
@@ -211,16 +222,16 @@ public class BlockMaster : MonoBehaviour {
 	}
 	public void CreateBackup() {
 		//creates a backup of the current timestamp
-		ChannelBackup.AddBackup(ChannelSaveLoad.CreateChannelString(this), isAutoSave: false);
+		ChannelBackup.AddBackup(ChannelSaveLoad.CreateChannelString(this), false, channelId);
 		RenderBackups();
 	}
 	public void LoadBackup(string backupId) {
-		ChannelBackup.LoadBackup(this, backupId);
+		ChannelBackup.LoadBackup(this, backupId, channelId);
 		HideBackups();
 	}
 	public void DeleteBackup(string backupId) {
 		//deletes a backup
-		ChannelBackup.RemoveBackup(backupId);
+		ChannelBackup.RemoveBackup(backupId, channelId);
 
 		//re-render backups
 		RenderBackups();
@@ -235,7 +246,7 @@ public class BlockMaster : MonoBehaviour {
 		while (true) {
 			yield return new WaitForSeconds(10);
 			SaveData(autoSave: true);
-			ChannelBackup.AddBackup(ChannelSaveLoad.CreateChannelString(this), isAutoSave: true);
+			ChannelBackup.AddBackup(ChannelSaveLoad.CreateChannelString(this), true, channelId);
 			RenderBackups();
 		}
 	}
@@ -244,10 +255,11 @@ public class BlockMaster : MonoBehaviour {
 		initializing = true;
 
 		//load channel
-		if (!ChannelSaveLoad.LoadChannel(this, "test_save")) {
-			//if save data doesn't exist, automatically try to download from online
-			TryDownloadData();
-		}
+		ChannelSaveLoad.LoadChannel(this, channelId);
+
+		//automatically try to download from online regardless
+		TryDownloadData();
+
 		ChannelLoaded();
 		initializing = false;
 	}
@@ -257,6 +269,7 @@ public class BlockMaster : MonoBehaviour {
 	private IEnumerator ChannelLoadedCoroutine() {
 		for (int i = 0; i < 2; i++) yield return new WaitForEndOfFrame();
 		RecalculateBlocks(true);
+		SaveData();
 	}
 	//NOTE: should be called whenever some sort of data has been changed (drag, input exit, etc)
 	// and should periodically be called as well
@@ -264,8 +277,7 @@ public class BlockMaster : MonoBehaviour {
 		//don't save "changes" when loading in the data
 		if (initializing) return;
 
-		//TODO: use channel
-		ChannelSaveLoad.SaveChannel(this, "test_save");
+		ChannelSaveLoad.SaveChannel(this, channelId);
 
 		if (!autoSave) {
 			Debug.Log("made save!");
@@ -288,24 +300,30 @@ public class BlockMaster : MonoBehaviour {
 		deleteAllBlocksScreen.gameObject.SetActive(false);
 	}
 	//NOTE: deletes all current data! MAKE SURE TO DOUBLE CHECK
-	public void ClearData() {
+	public void ClearData(bool withoutSave) {
 		foreach (TaskBlock b in new List<TaskBlock>(blocks)) {
 			b.DeleteBlock(true);
 		}
 		blocks.Clear();
-		SaveData();
 
 		deleteAllBlocksScreen.gameObject.SetActive(false);
 
-		if (!initializing) ShowNormalBar();
+		if (!initializing && !withoutSave) {
+			SaveData();
+			ShowNormalBar();
+		}
 	}
+	public void ClearData() { ClearData(false); }
 	public void TryUploadData() {
-		uploader.SendData("test_save", ChannelSaveLoad.CreateChannelString(this));
+		if (!canUpload) return;
+		uploader.SendData(channelId, ChannelSaveLoad.CreateChannelString(this));
 	}
 	public void TryDownloadData() {
-		//TODO: confirms with user whether they want to override current data
 		//initialization skips this and downloads directly if local data doesn't exist
-		downloader.GetData("test_save");
+		downloader.GetData(channelId);
+	}
+	public void DataDownloaded() {
+		canUpload = true;
 	}
 
 	#endregion
@@ -429,9 +447,12 @@ public class BlockMaster : MonoBehaviour {
 	}
 	private void Awake() {
 		instance = this;
+	}
+	private void Start() {
+		channelId = PlayerPrefs.GetString("current_channel");
+		if (channelId == "") channelId = "test_save";
 
 		LoadData();
-		SaveData();
 
 		StartCoroutine(PeriodicDataSave());
 

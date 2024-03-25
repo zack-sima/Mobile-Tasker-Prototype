@@ -5,7 +5,7 @@ using UnityEngine.Networking;
 
 public class DataUpload : MonoBehaviour {
 	//temp task sheets url
-	public static string dataURL = "https://script.google.com/macros/s/AKfycby9swBn0u04HVe7tvQdDwOlUpp4mdPWgE77P3tF9pwbcJiRifzWpCEHNyKbBCjEg6OCtw/exec";
+	public static string dataURL = "https://script.google.com/macros/s/AKfycby4u5Igp5r16tAIi0rjPDUsE3-9X2PpCk4WJut2tuqtOpJkVvTPHkCQK-USb9Ny1hORLw/exec";
 
 	public void SendData(string channelId, string jsonData) {
 		StartCoroutine(PostData(channelId, jsonData));

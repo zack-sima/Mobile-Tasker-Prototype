@@ -4,6 +4,21 @@
 function doGet(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('Sheet1'); // Change 'Sheet1' to your sheet's name
+
+  // Check if the path is to get all channels
+  if (e.parameter.path === '/get_channels') {
+    const data = sheet.getDataRange().getValues(); // Fetch all the data in the sheet
+    let channelIds = [];
+    
+    // Loop through the data to collect all channelIds
+    for (let i = 0; i < data.length; i++) {
+      channelIds.push(data[i][0]); // Assuming channel IDs are stored in the first column
+    }
+    
+    const json = JSON.stringify(channelIds);
+    return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
+  }
+
   const channelId = e.parameter.channelId;
   const data = sheet.getDataRange().getValues(); // Fetch all the data in the sheet
   let found = false;
@@ -58,6 +73,7 @@ function doPost(e) {
   return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
 }
+
 
 /////// SETUP ///////
 

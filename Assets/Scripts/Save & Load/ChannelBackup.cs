@@ -14,9 +14,9 @@ public static class ChannelBackup {
 		public bool isAutoSave;
 		public long timestamp;
 	}
-	public static BackupData GetBackups() {
+	public static BackupData GetBackups(string channelId) {
 		try {
-			string s = PlayerPrefs.GetString("channel_backups");
+			string s = PlayerPrefs.GetString($"channel_backups_{channelId}");
 			BackupData d = (BackupData)MyJsonUtility.FromJson(typeof(BackupData), s);
 			d.backups ??= new();
 
@@ -30,9 +30,9 @@ public static class ChannelBackup {
 			return new() { backups = new() };
 		}
 	}
-	public static void LoadBackup(BlockMaster master, string backupId) {
+	public static void LoadBackup(BlockMaster master, string backupId, string channelId) {
 		try {
-			string s = PlayerPrefs.GetString("channel_backups");
+			string s = PlayerPrefs.GetString($"channel_backups_{channelId}");
 			BackupData d = (BackupData)MyJsonUtility.FromJson(typeof(BackupData), s);
 			d.backups ??= new();
 
@@ -44,24 +44,24 @@ public static class ChannelBackup {
 			return;
 		}
 	}
-	public static void RemoveBackup(string backupId) {
+	public static void RemoveBackup(string backupId, string channelId) {
 		BackupData d;
 		try {
-			string s = PlayerPrefs.GetString("channel_backups");
+			string s = PlayerPrefs.GetString($"channel_backups_{channelId}");
 			d = (BackupData)MyJsonUtility.FromJson(typeof(BackupData), s);
 			d.backups ??= new();
 			if (d.backups.ContainsKey(backupId)) {
 				d.backups.Remove(backupId);
 			}
-			PlayerPrefs.SetString("channel_backups", MyJsonUtility.ToJson(typeof(BackupData), d));
+			PlayerPrefs.SetString($"channel_backups_{channelId}", MyJsonUtility.ToJson(typeof(BackupData), d));
 		} catch {
 			return;
 		}
 	}
-	public static void AddBackup(string data, bool isAutoSave) {
+	public static void AddBackup(string data, bool isAutoSave, string channelId) {
 		BackupData d;
 		try {
-			string s = PlayerPrefs.GetString("channel_backups");
+			string s = PlayerPrefs.GetString($"channel_backups_{channelId}");
 			d = (BackupData)MyJsonUtility.FromJson(typeof(BackupData), s);
 		} catch {
 			d = new();
@@ -116,9 +116,10 @@ public static class ChannelBackup {
 			}
 			//otherwise remove backup
 			d.backups.Remove(backup.Key);
-			Debug.Log($"{currTime}, {backup.Value.timestamp}");
-			Debug.Log($"Removed backup: {backup.Key}, time difference={currTime - backup.Value.timestamp}");
+
+			//Debug.Log($"{currTime}, {backup.Value.timestamp}");
+			//Debug.Log($"Removed backup: {backup.Key}, time difference={currTime - backup.Value.timestamp}");
 		}
-		PlayerPrefs.SetString("channel_backups", MyJsonUtility.ToJson(typeof(BackupData), d));
+		PlayerPrefs.SetString($"channel_backups_{channelId}", MyJsonUtility.ToJson(typeof(BackupData), d));
 	}
 }

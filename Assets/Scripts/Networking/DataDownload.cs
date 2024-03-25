@@ -20,27 +20,34 @@ public class DataDownload : MonoBehaviour {
 			} else {
 				Debug.Log(www.downloadHandler.text);
 
+				BlockMaster.instance.DataDownloaded();
+
 				// Here you can convert the JSON response to your desired format and use it in your game
 				string rawData = www.downloadHandler.text;
 				if (rawData.Length == 0 || rawData.Length < 30 && rawData.Contains("not found")) {
 					Debug.LogWarning("could not retrieve channel!");
 				} else {
-					//** sanitizing the json **
-					rawData = rawData[2..^2];
-					rawData = rawData.Replace(@"\\n", "\n");
-					rawData = rawData.Replace(@"\\t", "\t");
-					rawData = rawData.Replace("\\\"", "\"");
-
-					//actual " character literals
-					rawData = rawData.Replace("\\\\\"", "\\\"");
-
-					//actual \ character literals
-					rawData = rawData.Replace("\\\\", "\\");
+					rawData = SanatizeJson(rawData);
 
 					ChannelSaveLoad.LoadChannelWithString(BlockMaster.instance, rawData);
 				}
 			}
 		}
 		BlockMaster.instance.SetLoadingScreen(false);
+	}
+	public static string SanatizeJson(string rawData) {
+		//** sanitizing the json **
+		rawData = rawData[2..^2];
+		rawData = rawData.Replace(@"\\n", "\n");
+		rawData = rawData.Replace(@"\\t", "\t");
+		rawData = rawData.Replace("\\\"", "\"");
+
+		//actual " character literals
+		rawData = rawData.Replace("\\\\\"", "\\\"");
+
+		//actual \ character literals
+		rawData = rawData.Replace("\\\\", "\\");
+
+		return rawData;
 	}
 }
