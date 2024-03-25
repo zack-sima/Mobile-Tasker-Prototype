@@ -14,6 +14,7 @@ public class BlockMaster : MonoBehaviour {
 	#region Prefabs
 
 	[SerializeField] private GameObject blockPrefab;
+	[SerializeField] private GameObject backupRowPrefab;
 
 	#endregion
 
@@ -46,6 +47,9 @@ public class BlockMaster : MonoBehaviour {
 	[SerializeField] private RectTransform loadingScreen;
 	public void SetLoadingScreen(bool isOn) { loadingScreen.gameObject.SetActive(isOn); }
 
+	[SerializeField] private RectTransform backupsScreen;
+	[SerializeField] private RectTransform backupsScrollViewContent;
+
 	[SerializeField] private TMP_InputField titleInputField;
 	public string GetTitle() { return titleInputField.text; }
 	public void SetTitle(string t) { titleInputField.text = t; }
@@ -61,14 +65,30 @@ public class BlockMaster : MonoBehaviour {
 	private List<TaskBlock> blocks = new();
 	public List<TaskBlock> GetBlocks() { return blocks; }
 
+	//keeps track of up to 100 undos and redos
+	private LinkedList<string> undoStack = new();
+	private LinkedList<string> redoStack = new();
+
 	//whether to show delete button, set clock button, etc...
 	private bool showOptions = false;
 	public bool GetShowOptions() { return showOptions; }
+
+	//don't track undo/redo or save data when this is marked on
+	bool initializing = false;
+
+	//backups rows
+	private List<BackupRow> backupRows = new();
 
 	#endregion
 
 	#region Button Callbacks
 
+	public void TryUndo() {
+		UndoStep();
+	}
+	public void TryRedo() {
+		RedoStep();
+	}
 	public void ShowNormalBar() {
 		optionsMenuBar.gameObject.SetActive(false);
 		normalMenuBar.gameObject.SetActive(true);
@@ -77,7 +97,13 @@ public class BlockMaster : MonoBehaviour {
 		optionsMenuBar.gameObject.SetActive(true);
 		normalMenuBar.gameObject.SetActive(false);
 	}
-
+	public void ShowBackups() {
+		backupsScreen.gameObject.SetActive(true);
+		RenderBackups();
+	}
+	public void HideBackups() {
+		backupsScreen.gameObject.SetActive(false);
+	}
 	private TaskBlock blockToDelete = null;
 	public void DeleteBlockCalled(TaskBlock from) {
 		blockToDelete = from;
@@ -115,24 +141,112 @@ public class BlockMaster : MonoBehaviour {
 
 	#endregion
 
+	#region Undo & Redo
+
+	private void UndoStep() {
+		if (undoStack.Count <= 1) {
+			Debug.Log("No more undos left!");
+			return;
+		}
+
+		initializing = true;
+
+		redoStack.AddLast(undoStack.Last.Value);
+
+		undoStack.RemoveLast();
+
+		if (undoStack.Count > 0) {
+			ChannelSaveLoad.LoadChannelWithString(this, undoStack.Last.Value);
+		}
+
+		initializing = false;
+
+		//don't trigger undo stack adding
+		SaveData(autoSave: true);
+		TryUploadData();
+	}
+	private void RedoStep() {
+		if (redoStack.Count == 0) {
+			Debug.Log("No more redos left!");
+			return;
+		}
+
+		initializing = true;
+
+		ChannelSaveLoad.LoadChannelWithString(this, redoStack.Last.Value);
+		undoStack.AddLast(redoStack.Last.Value);
+		redoStack.RemoveLast();
+
+		initializing = false;
+
+		//don't trigger undo stack adding
+		SaveData(autoSave: true);
+		TryUploadData();
+	}
+	//only saves the last 100 moves to prevent memory issues
+	private void PopFullStack<T>(LinkedList<T> stack) {
+		while (stack.Count > 100) stack.RemoveFirst();
+	}
+
+	#endregion
+
+	#region Backups
+
+	//re-renders the backup list for the scroll view
+	public void RenderBackups() {
+		//delete existing backup rows to clean up
+		foreach (BackupRow r in backupRows) {
+			Destroy(r.gameObject);
+		}
+		backupRows.Clear();
+
+		//create new rows in backup scroll view
+		ChannelBackup.BackupData data = ChannelBackup.GetBackups();
+		foreach (KeyValuePair<string, ChannelBackup.SingleBackup> kv in data.backups) {
+			BackupRow r = Instantiate(backupRowPrefab,
+				backupsScrollViewContent).GetComponent<BackupRow>();
+			r.SetBackupId(kv.Key);
+			backupRows.Add(r);
+		}
+	}
+	public void CreateBackup() {
+		//creates a backup of the current timestamp
+		ChannelBackup.AddBackup(ChannelSaveLoad.CreateChannelString(this), isAutoSave: false);
+		RenderBackups();
+	}
+	public void LoadBackup(string backupId) {
+		ChannelBackup.LoadBackup(this, backupId);
+		HideBackups();
+	}
+	public void DeleteBackup(string backupId) {
+		//deletes a backup
+		ChannelBackup.RemoveBackup(backupId);
+
+		//re-render backups
+		RenderBackups();
+	}
+
+	#endregion
+
 	#region Save & Load
 
 	//saves every 10 seconds
 	private IEnumerator PeriodicDataSave() {
 		while (true) {
 			yield return new WaitForSeconds(10);
-			SaveData();
+			SaveData(autoSave: true);
+			ChannelBackup.AddBackup(ChannelSaveLoad.CreateChannelString(this), isAutoSave: true);
+			RenderBackups();
 		}
 	}
-	bool initializing = false;
+
 	public void LoadData() {
 		initializing = true;
 
-		//TODO: if current data isn't empty, load it to some sort of backup
-
 		//load channel
 		if (!ChannelSaveLoad.LoadChannel(this, "test_save")) {
-			//TODO: if save data doesn't exist, automatically try to download from online
+			//if save data doesn't exist, automatically try to download from online
+			TryDownloadData();
 		}
 		ChannelLoaded();
 		initializing = false;
@@ -146,12 +260,26 @@ public class BlockMaster : MonoBehaviour {
 	}
 	//NOTE: should be called whenever some sort of data has been changed (drag, input exit, etc)
 	// and should periodically be called as well
-	public void SaveData() {
+	public void SaveData(bool autoSave) {
 		//don't save "changes" when loading in the data
 		if (initializing) return;
 
-		ChannelSaveLoad.SaveChannel(blocks, "test_save", GetTitle());
-		Debug.Log("saved data");
+		//TODO: use channel
+		ChannelSaveLoad.SaveChannel(this, "test_save");
+
+		if (!autoSave) {
+			Debug.Log("made save!");
+
+			string saveStr = ChannelSaveLoad.CreateChannelString(this);
+			undoStack.AddLast(saveStr);
+			PopFullStack(undoStack);
+			redoStack.Clear();
+
+			TryUploadData();
+		}
+	}
+	public void SaveData() {
+		SaveData(false);
 	}
 	public void TryClearData() {
 		deleteAllBlocksScreen.gameObject.SetActive(true);
@@ -168,11 +296,11 @@ public class BlockMaster : MonoBehaviour {
 		SaveData();
 
 		deleteAllBlocksScreen.gameObject.SetActive(false);
-		ShowNormalBar();
+
+		if (!initializing) ShowNormalBar();
 	}
 	public void TryUploadData() {
-		//TODO: calls UI to verify user wants to update online data
-		uploader.SendData("test_save", ChannelSaveLoad.CreateChannelString(blocks, GetTitle()));
+		uploader.SendData("test_save", ChannelSaveLoad.CreateChannelString(this));
 	}
 	public void TryDownloadData() {
 		//TODO: confirms with user whether they want to override current data
@@ -181,6 +309,8 @@ public class BlockMaster : MonoBehaviour {
 	}
 
 	#endregion
+
+	#region Blocks Logic
 
 	public void SetShadow(Vector2 sizeDelta, float heightOffset, float leftOffset, float rightOffset) {
 		if (!blockShadow.gameObject.activeInHierarchy)
@@ -240,7 +370,7 @@ public class BlockMaster : MonoBehaviour {
 	}
 	//rearranges blocks so that the movedBlock is now above the block titled aboveThis;
 	//if aboveThis is null movedBlock is the last block
-	public void RearrangeBlocks(TaskBlock movedBlock, TaskBlock aboveThis, TaskBlock parentBlock = null) {
+	public void RearrangeBlocks(TaskBlock movedBlock, TaskBlock aboveThis, TaskBlock parentBlock = null, bool finishedRearranging = false) {
 		//if a parent for this exists, make sure to remove it from that parent's list of children
 		movedBlock.DetachFromParent();
 
@@ -277,8 +407,9 @@ public class BlockMaster : MonoBehaviour {
 		}
 		RecalculateBlocks();
 
-		//save changes
-		SaveData();
+		//save changes (if not dragging anymore)
+		if (finishedRearranging)
+			SaveData();
 	}
 
 	public void DisableShadow() {
@@ -288,14 +419,24 @@ public class BlockMaster : MonoBehaviour {
 	public void SetScrollViewDraggable(bool draggable) {
 		scrollViewParent.vertical = draggable;
 	}
+
+	#endregion
+
+	#region Unity Functions
+
 	private void Update() {
+
 	}
 	private void Awake() {
 		instance = this;
 
 		LoadData();
+		SaveData();
+
 		StartCoroutine(PeriodicDataSave());
 
 		Application.targetFrameRate = 60;
 	}
+
+	#endregion
 }

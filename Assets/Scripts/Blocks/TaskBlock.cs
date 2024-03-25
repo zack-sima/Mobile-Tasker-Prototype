@@ -68,7 +68,7 @@ public class TaskBlock : MonoBehaviour {
 		//set this block right above blocks.Key and inside parent (blocks.Value)
 		KeyValuePair<TaskBlock, TaskBlock> blocks = BlockMaster.instance.GetBlockAtLocation(transform.position);
 
-		BlockMaster.instance.RearrangeBlocks(this, blocks.Key, blocks.Value);
+		BlockMaster.instance.RearrangeBlocks(this, blocks.Key, blocks.Value, finishedRearranging: Input.GetMouseButtonUp(0));
 
 		//NOTE: for some reason, OnPointerUp doesn't work properly here
 		if (Input.GetMouseButtonUp(0)) {
@@ -91,6 +91,12 @@ public class TaskBlock : MonoBehaviour {
 
 	public void TryDeleteBlock() {
 		BlockMaster.instance.DeleteBlockCalled(this);
+	}
+	public void AddChildBlock() {
+		TaskBlock newBlock = BlockMaster.instance.CreateBlock(recalculate: false);
+		newBlock.SetParent(this);
+		children.Add(newBlock);
+		BlockMaster.instance.RecalculateBlocks();
 	}
 	public void DeleteBlock(bool source = true) {
 		//recursively deletes all children as well

@@ -26,11 +26,14 @@ public static class ChannelSaveLoad {
 	}
 	//TODO: channelId should be the given ID of the channel when it is created;
 	//channelName can be changed and is displayed
-	public static void SaveChannel(List<TaskBlock> blocks, string channelId, string channelName) {
+	public static void SaveChannel(BlockMaster master, string channelId) {
 		//TODO: save in a more coherent manner
-		PlayerPrefs.SetString(channelId, CreateChannelString(blocks, channelName));
+		PlayerPrefs.SetString(channelId, CreateChannelString(master));
 	}
-	public static string CreateChannelString(List<TaskBlock> blocks, string channelName) {
+	public static string CreateChannelString(BlockMaster master) {
+		string channelName = master.GetTitle();
+		List<TaskBlock> blocks = master.GetBlocks();
+
 		ChannelData data = new() {
 			channelName = channelName,
 			blocks = new()
@@ -59,16 +62,22 @@ public static class ChannelSaveLoad {
 		return LoadChannelWithString(master, dataString);
 	}
 	public static bool LoadChannelWithString(BlockMaster master, string dataString) {
-		master.ClearData();
-		ChannelData data = (ChannelData)MyJsonUtility.FromJson(typeof(ChannelData), dataString);
-		if (data == null || data.blocks == null) return false;
-		foreach (SaveBlock s in data.blocks) {
-			master.GetBlocks().Add(LoadBlockAndAllChildren(master, s));
+		try {
+			ChannelData data = (ChannelData)MyJsonUtility.FromJson(typeof(ChannelData), dataString);
+			if (data == null || data.blocks == null) return false;
+
+			master.ClearData();
+			foreach (SaveBlock s in data.blocks) {
+				master.GetBlocks().Add(LoadBlockAndAllChildren(master, s));
+			}
+			master.SetTitle(data.channelName);
+			master.RecalculateBlocks(recheckInputs: true);
+			master.ChannelLoaded();
+			return true;
+		} catch (System.Exception e) {
+			Debug.LogWarning($"Loading failed: {e}");
+			return false;
 		}
-		master.SetTitle(data.channelName);
-		master.RecalculateBlocks(recheckInputs: true);
-		master.ChannelLoaded();
-		return true;
 	}
 	//helper recursive function
 	private static TaskBlock LoadBlockAndAllChildren(BlockMaster master, SaveBlock parent) {

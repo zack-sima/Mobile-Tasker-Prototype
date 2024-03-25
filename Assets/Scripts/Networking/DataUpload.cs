@@ -11,7 +11,7 @@ public class DataUpload : MonoBehaviour {
 		StartCoroutine(PostData(channelId, jsonData));
 	}
 	IEnumerator PostData(string channelId, string jsonData) {
-		BlockMaster.instance.SetLoadingScreen(true);
+		//BlockMaster.instance.SetLoadingScreen(true);
 
 		WWWForm form = new WWWForm();
 		form.AddField("channelId", channelId);
@@ -27,6 +27,6 @@ public class DataUpload : MonoBehaviour {
 				Debug.Log(www.downloadHandler.text);
 			}
 		}
-		BlockMaster.instance.SetLoadingScreen(false);
+		//BlockMaster.instance.SetLoadingScreen(false);
 	}
 }

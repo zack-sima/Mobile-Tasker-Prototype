@@ -25,6 +25,7 @@ public class DataDownload : MonoBehaviour {
 				if (rawData.Length == 0 || rawData.Length < 30 && rawData.Contains("not found")) {
 					Debug.LogWarning("could not retrieve channel!");
 				} else {
+					//** sanitizing the json **
 					rawData = rawData[2..^2];
 					rawData = rawData.Replace(@"\\n", "\n");
 					rawData = rawData.Replace(@"\\t", "\t");
