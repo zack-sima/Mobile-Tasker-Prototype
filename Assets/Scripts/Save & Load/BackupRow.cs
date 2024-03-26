@@ -14,6 +14,8 @@ public class BackupRow : MonoBehaviour {
 	public void SetBackupId(string backupId) {
 		this.backupId = backupId;
 		backupId = backupId.Replace("[Backup]", "<color=#33FF33>[Backup]</color>");
+		backupId = backupId.Replace("[Last Edit]", "<color=#FFFF33>[Last Edit]</color>");
+
 		backupIdDisplay.text = backupId;
 	}
 	public void LoadBackup() {

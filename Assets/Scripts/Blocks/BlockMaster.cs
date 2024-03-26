@@ -55,7 +55,6 @@ public class BlockMaster : MonoBehaviour {
 	public string GetTitle() { return titleInputField.text; }
 	public void SetTitle(string t) { titleInputField.text = t; }
 
-	[SerializeField] private DataUpload uploader;
 	[SerializeField] private DataDownload downloader;
 
 	#endregion
@@ -86,12 +85,19 @@ public class BlockMaster : MonoBehaviour {
 	//check before allowing uploading
 	private bool canUpload = false;
 
+	//set this to false when mouse just pressed, and true whenever mouse is pressed but dragged
+	private bool mouseScrolled = false;
+	public bool GetMouseScrolled() { return mouseScrolled; }
+
+	private Vector2 mouseDownPosition = Vector2.zero;
+
 	#endregion
 
 	#region Button Callbacks
 
 	public void ExitChannel() {
 		SaveData(autoSave: true);
+		CreateLastBackup();
 		SceneManager.LoadScene(0);
 	}
 	public void TryUndo() {
@@ -220,13 +226,19 @@ public class BlockMaster : MonoBehaviour {
 			backupRows.Add(r);
 		}
 	}
+	public void CreateLastBackup() {
+		ChannelBackup.AddBackup(ChannelSaveLoad.CreateChannelString(this), false, true, channelId);
+	}
 	public void CreateBackup() {
 		//creates a backup of the current timestamp
-		ChannelBackup.AddBackup(ChannelSaveLoad.CreateChannelString(this), false, channelId);
+		ChannelBackup.AddBackup(ChannelSaveLoad.CreateChannelString(this), false, false, channelId);
 		RenderBackups();
 	}
 	public void LoadBackup(string backupId) {
+		initializing = true;
 		ChannelBackup.LoadBackup(this, backupId, channelId);
+		initializing = false;
+
 		HideBackups();
 	}
 	public void DeleteBackup(string backupId) {
@@ -246,7 +258,7 @@ public class BlockMaster : MonoBehaviour {
 		while (true) {
 			yield return new WaitForSeconds(10);
 			SaveData(autoSave: true);
-			ChannelBackup.AddBackup(ChannelSaveLoad.CreateChannelString(this), true, channelId);
+			ChannelBackup.AddBackup(ChannelSaveLoad.CreateChannelString(this), true, false, channelId);
 			RenderBackups();
 		}
 	}
@@ -269,7 +281,7 @@ public class BlockMaster : MonoBehaviour {
 	private IEnumerator ChannelLoadedCoroutine() {
 		for (int i = 0; i < 2; i++) yield return new WaitForEndOfFrame();
 		RecalculateBlocks(true);
-		SaveData();
+		SaveData(false);
 	}
 	//NOTE: should be called whenever some sort of data has been changed (drag, input exit, etc)
 	// and should periodically be called as well
@@ -285,6 +297,7 @@ public class BlockMaster : MonoBehaviour {
 			string saveStr = ChannelSaveLoad.CreateChannelString(this);
 			undoStack.AddLast(saveStr);
 			PopFullStack(undoStack);
+
 			redoStack.Clear();
 
 			TryUploadData();
@@ -315,8 +328,8 @@ public class BlockMaster : MonoBehaviour {
 	}
 	public void ClearData() { ClearData(false); }
 	public void TryUploadData() {
-		if (!canUpload) return;
-		uploader.SendData(channelId, ChannelSaveLoad.CreateChannelString(this));
+		if (!canUpload || DataUpload.instance == null) return;
+		DataUpload.instance.SendData(channelId, ChannelSaveLoad.CreateChannelString(this));
 	}
 	public void TryDownloadData() {
 		//initialization skips this and downloads directly if local data doesn't exist
@@ -443,7 +456,15 @@ public class BlockMaster : MonoBehaviour {
 	#region Unity Functions
 
 	private void Update() {
-
+		if (Input.GetMouseButtonDown(0)) {
+			mouseScrolled = false;
+			mouseDownPosition = Input.mousePosition;
+		}
+		if (Input.GetMouseButton(0)) {
+			if (Vector2.Distance((Vector2)Input.mousePosition, mouseDownPosition) > 10) {
+				mouseScrolled = true;
+			}
+		}
 	}
 	private void Awake() {
 		instance = this;

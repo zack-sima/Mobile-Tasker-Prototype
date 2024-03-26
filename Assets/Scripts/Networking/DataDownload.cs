@@ -20,8 +20,6 @@ public class DataDownload : MonoBehaviour {
 			} else {
 				Debug.Log(www.downloadHandler.text);
 
-				BlockMaster.instance.DataDownloaded();
-
 				// Here you can convert the JSON response to your desired format and use it in your game
 				string rawData = www.downloadHandler.text;
 				if (rawData.Length == 0 || rawData.Length < 30 && rawData.Contains("not found")) {
@@ -30,6 +28,7 @@ public class DataDownload : MonoBehaviour {
 					rawData = SanatizeJson(rawData);
 
 					ChannelSaveLoad.LoadChannelWithString(BlockMaster.instance, rawData);
+					BlockMaster.instance.DataDownloaded();
 				}
 			}
 		}

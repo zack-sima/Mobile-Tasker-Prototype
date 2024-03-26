@@ -6,7 +6,11 @@ using UnityEngine.UI;
 
 public class ChannelRow : MonoBehaviour {
 	[SerializeField] private TMP_Text channelDisplay;
+	[SerializeField] private Image optionsImage, loadChannelImage;
+	[SerializeField] private Sprite optionsSprite, loadChannelSprite, deleteSprite, backSprite;
 
+	//when in options buttons are different
+	private bool inOptions = false;
 	private string channelName = "";
 
 	public void SetTitle(string title) {
@@ -16,10 +20,22 @@ public class ChannelRow : MonoBehaviour {
 		channelName = channel;
 	}
 	public void GoToChannel() {
-		ChannelMaster.instance.GoToChannel(channelName);
+		if (inOptions) {
+			// double check + delete on server, etc but ONLY for channel owner
+			ChannelMaster.instance.TryRemoveChannel(channelName);
+		} else {
+			ChannelMaster.instance.GoToChannel(channelName);
+		}
 	}
-	public void DeleteChannel() {
-		//TODO: double check + delete on server, etc but ONLY for channel owner
-		ChannelMaster.instance.RemoveChannel(channelName);
+	public void Options() {
+		inOptions = !inOptions;
+
+		if (inOptions) {
+			optionsImage.sprite = backSprite;
+			loadChannelImage.sprite = deleteSprite;
+		} else {
+			optionsImage.sprite = optionsSprite;
+			loadChannelImage.sprite = loadChannelSprite;
+		}
 	}
 }

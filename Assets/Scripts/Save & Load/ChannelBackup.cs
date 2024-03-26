@@ -12,6 +12,7 @@ public static class ChannelBackup {
 	public class SingleBackup {
 		public string channelData;
 		public bool isAutoSave;
+		public bool isLastEdit;
 		public long timestamp;
 	}
 	public static BackupData GetBackups(string channelId) {
@@ -58,7 +59,7 @@ public static class ChannelBackup {
 			return;
 		}
 	}
-	public static void AddBackup(string data, bool isAutoSave, string channelId) {
+	public static void AddBackup(string data, bool isAutoSave, bool isLastEdit, string channelId) {
 		BackupData d;
 		try {
 			string s = PlayerPrefs.GetString($"channel_backups_{channelId}");
@@ -67,17 +68,29 @@ public static class ChannelBackup {
 			d = new();
 		}
 		string saveName = isAutoSave ? "[Autosave]" : "[Backup]";
+		saveName = isLastEdit ? "[Last Edit]" : saveName;
 		string backupId = $"{saveName} {System.DateTime.Now}";
+
+		//seconds
+		long currTime = System.DateTime.Now.ToBinary() / 10_000_000;
+
+		//remove old "last edit" backups >1 week
+		if (isLastEdit) {
+			foreach (KeyValuePair<string, SingleBackup> backup in d.backups) {
+				if (backup.Value.timestamp < currTime - 3600 * 24 * 7)
+					backup.Value.isLastEdit = false;
+			}
+		}
 
 		d.backups ??= new();
 		d.backups.TryAdd(backupId, new() {
 			channelData = data,
 			isAutoSave = isAutoSave,
+			isLastEdit = isLastEdit,
 			timestamp = System.DateTime.Now.ToBinary() / 10_000_000 //seconds
 		});
 
 		//cleanup auto backups; last minute all backups kept, last ten minuts one per minute, etc
-		long currTime = System.DateTime.Now.ToBinary() / 10_000_000; //seconds
 		long lastTenMinuteBackupTimestamp = currTime,
 			lastHourBackupTimestamp = currTime,
 			lastDayBackupTimestamp = currTime,
@@ -87,8 +100,8 @@ public static class ChannelBackup {
 		sortedBackups.Sort((pair1, pair2) => pair2.Value.timestamp.CompareTo(pair1.Value.timestamp));
 
 		foreach (KeyValuePair<string, SingleBackup> backup in sortedBackups) {
-			if (!backup.Value.isAutoSave) continue; //player saves are permanent
-			if (backup.Value.timestamp > currTime - 125) continue; //backup all recent
+			if (!backup.Value.isAutoSave || backup.Value.isLastEdit) continue; //player saves are permanent
+			if (backup.Value.timestamp > currTime - 70) continue; //backup all recent
 
 			//last 10 minutes, 1 minute per backup
 			if (backup.Value.timestamp > currTime - 600 &&

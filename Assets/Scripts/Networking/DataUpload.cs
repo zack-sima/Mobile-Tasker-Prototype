@@ -4,15 +4,15 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 public class DataUpload : MonoBehaviour {
+	public static DataUpload instance;
+
 	//temp task sheets url
-	public static string dataURL = "https://script.google.com/macros/s/AKfycby4u5Igp5r16tAIi0rjPDUsE3-9X2PpCk4WJut2tuqtOpJkVvTPHkCQK-USb9Ny1hORLw/exec";
+	public static string dataURL = "https://script.google.com/macros/s/AKfycbx5S478iOL3Fim9CT8NjDPfDjTZADEhXOUH1mgpuZG0pWtC9o2fNnfVahbzgrBUzhX46A/exec";
 
 	public void SendData(string channelId, string jsonData) {
 		StartCoroutine(PostData(channelId, jsonData));
 	}
 	IEnumerator PostData(string channelId, string jsonData) {
-		//BlockMaster.instance.SetLoadingScreen(true);
-
 		WWWForm form = new WWWForm();
 		form.AddField("channelId", channelId);
 		form.AddField("jsonData", jsonData);
@@ -27,6 +27,15 @@ public class DataUpload : MonoBehaviour {
 				Debug.Log(www.downloadHandler.text);
 			}
 		}
-		//BlockMaster.instance.SetLoadingScreen(false);
+	}
+	private void Awake() {
+		if (instance != null) {
+			Destroy(gameObject);
+			return;
+		}
+		instance = this;
+
+		//uploads across scenes
+		DontDestroyOnLoad(gameObject);
 	}
 }

@@ -6,7 +6,7 @@ function doGet(e) {
   const sheet = ss.getSheetByName('Sheet1'); // Change 'Sheet1' to your sheet's name
 
   // Check if the path is to get all channels
-  if (e.parameter.path === '/get_channels') {
+  if (e.parameter.action === 'get_channels') {
     const data = sheet.getDataRange().getValues(); // Fetch all the data in the sheet
     let channelIds = [];
     
@@ -39,13 +39,30 @@ function doGet(e) {
 
 // Modified POST request to update or append data based on channelId
 function doPost(e) {
-  var result;
-
   try {
     var sheetName = 'Sheet1';
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(sheetName);
     var channelId = e.parameter.channelId;
+
+    // New section for deleting a channel
+    if (e.parameter.action === 'delete_channel' && e.parameter.channelId) {
+      var channelId = e.parameter.channelId;
+      var data = sheet.getDataRange().getValues();
+      for (let i = 0; i < data.length; i++) {
+        if (data[i][0] === channelId) {
+          // Delete the row corresponding to the channelId
+          sheet.deleteRow(i + 1);
+          return ContentService.createTextOutput(JSON.stringify({ 'status': 'success', 'message': 'Channel deleted' }))
+              .setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+      // If the channelId is not found
+      return ContentService.createTextOutput(JSON.stringify({ 'status': 'error', 'message': 'Channel not found' }))
+          .setMimeType(ContentService.MimeType.JSON);
+    }
+    var result;
+
     var jsonData = e.parameter.jsonData;
     var data = sheet.getDataRange().getValues();
     var found = false;
@@ -73,7 +90,6 @@ function doPost(e) {
   return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
 }
-
 
 /////// SETUP ///////
 

@@ -36,6 +36,7 @@ public static class ChannelSaveLoad {
 			channelName = channelName,
 			blocks = new()
 		};
+		DataUpload.instance.SendData(channelId, data.ToString());
 		PlayerPrefs.SetString("channel_data_" + channelId, data.ToString());
 	}
 	public static string CreateChannelString(BlockMaster master) {

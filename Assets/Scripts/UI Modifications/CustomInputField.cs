@@ -20,12 +20,12 @@ public class CustomInputField : TMP_InputField {
 			base.OnPointerDown(eventData);
 		}
 	}
-
+	//remove the clicking behavior
+	public override void OnPointerClick(PointerEventData eventData) { }
 	// Implement the OnPointerUp method to set focus
 	public override void OnPointerUp(PointerEventData eventData) {
 		// Check if the pointer is within the bounds of the InputField
 		if (IsPointerWithinBounds(eventData) && !isFocused) {
-			//base.OnPointerDown(eventData); // Call the base OnPointerDown here instead
 			SetFocus();
 		}
 		if (dimImage != null)
@@ -33,7 +33,8 @@ public class CustomInputField : TMP_InputField {
 	}
 	// Method to set focus to this input field
 	private void SetFocus() {
-		if (EventSystem.current != null) {
+		if (EventSystem.current != null && (BlockMaster.instance == null ||
+				!BlockMaster.instance.GetMouseScrolled())) {
 			EventSystem.current.SetSelectedGameObject(
 				gameObject, new BaseEventData(EventSystem.current));
 		}

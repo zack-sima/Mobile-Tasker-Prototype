@@ -92,8 +92,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 80
-  m_fontSizeBase: 80
+  m_fontSize: 70
+  m_fontSizeBase: 70
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -186,6 +186,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   channelDisplay: {fileID: 5255947873791148022}
+  optionsImage: {fileID: 377482433219450279}
+  loadChannelImage: {fileID: 5318931996005467312}
+  optionsSprite: {fileID: 21300000, guid: 120108ca403c745e1a17e1b0085b2657, type: 3}
+  loadChannelSprite: {fileID: 21300000, guid: 864d703d551554732b7a661698318fb4, type: 3}
+  deleteSprite: {fileID: 21300000, guid: b5d85d9cba5e84b8da53273e915b36b0, type: 3}
+  backSprite: {fileID: 21300000, guid: fe5b02f9249784eda8873c47b3016669, type: 3}
 --- !u!1 &8022092539182868725
 GameObject:
   m_ObjectHideFlags: 0
@@ -201,7 +207,7 @@ GameObject:
   - component: {fileID: 6263206638826663738}
   - component: {fileID: 3545735941295502778}
   m_Layer: 5
-  m_Name: DeleteChannelButton
+  m_Name: OptionsButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -311,7 +317,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 3943485885395781653}
         m_TargetAssemblyTypeName: ChannelRow, Assembly-CSharp
-        m_MethodName: DeleteChannel
+        m_MethodName: Options
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -656,7 +662,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: b5d85d9cba5e84b8da53273e915b36b0, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 120108ca403c745e1a17e1b0085b2657, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

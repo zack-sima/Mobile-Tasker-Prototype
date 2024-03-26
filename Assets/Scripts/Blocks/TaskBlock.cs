@@ -130,6 +130,7 @@ public class TaskBlock : MonoBehaviour {
 		//call re-render on block master
 		foldButton.transform.eulerAngles = new Vector3(0, 0, isFolded ? 90 : 0);
 		BlockMaster.instance.RecalculateBlocks();
+		BlockMaster.instance.SaveData();
 	}
 
 	//updates the inputfields of all children to be resized properly

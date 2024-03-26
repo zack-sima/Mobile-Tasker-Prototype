@@ -15,10 +15,12 @@ public class ChannelMaster : MonoBehaviour {
 	//references
 	[SerializeField] private TMP_InputField newChannelNameInput;
 	[SerializeField] private RectTransform scrollViewContent;
+	[SerializeField] private RectTransform deleteChannelRect;
 
 	//members
 	private ChannelList myChannels = new(); //saved in PlayerPrefs
 	private List<ChannelRow> channelRows = new();
+	private List<string> justDeletedChannels = new();
 
 	private void Awake() {
 		instance = this;
@@ -34,6 +36,9 @@ public class ChannelMaster : MonoBehaviour {
 		RenderChannels();
 		StartCoroutine(GetChannelIDs());
 	}
+	public void GoToSettings() {
+		SceneManager.LoadScene(2);
+	}
 	public void AddChannel() {
 		string channelName = newChannelNameInput.text;
 		if (channelName == "") channelName = "New Channel";
@@ -45,14 +50,34 @@ public class ChannelMaster : MonoBehaviour {
 		ChannelSaveLoad.CreateNewEmptyChannel(channelId, channelName);
 
 		SaveChannelIds();
-
 	}
-	public void RemoveChannel(string channelId) {
-		if (myChannels.channelIds.Contains(channelId))
-			myChannels.channelIds.Remove(channelId);
+	string tempChannelId = "";
+	public void TryRemoveChannel(string channelId) {
+		tempChannelId = channelId;
+		deleteChannelRect.gameObject.SetActive(true);
+	}
+	public void CancelRemoveChannel() {
+		deleteChannelRect.gameObject.SetActive(false);
+	}
+	//clears all PlayerPrefs, etc in channel
+	private void ClearChannelStorage(string channelId) {
+		PlayerPrefs.DeleteKey("channel_data_" + channelId);
+		PlayerPrefs.DeleteKey("channel_backups_" + channelId);
+	}
+	public void RemoveChannel() {
+		if (tempChannelId == "") return;
 
+		if (myChannels.channelIds.Contains(tempChannelId)) {
+			myChannels.channelIds.Remove(tempChannelId);
+			ClearChannelStorage(tempChannelId);
+			StartCoroutine(DeleteChannel(tempChannelId));
+		}
 		SaveChannelIds();
 		RenderChannels();
+
+		justDeletedChannels.Add(tempChannelId);
+		tempChannelId = "";
+		CancelRemoveChannel();
 	}
 	public void GoToChannel(string channelId) {
 		PlayerPrefs.SetString("current_channel", channelId);
@@ -81,6 +106,24 @@ public class ChannelMaster : MonoBehaviour {
 				r.SetTitle(d.channelName);
 			}
 			channelRows.Add(r);
+		}
+	}
+	//calls delete on remote
+	IEnumerator DeleteChannel(string channelId) {
+		WWWForm form = new WWWForm();
+		form.AddField("channelId", channelId);
+		form.AddField("action", "delete_channel");
+
+		using (UnityWebRequest www = UnityWebRequest.Post(DataUpload.dataURL, form)) {
+			yield return www.SendWebRequest();
+
+			if (www.result != UnityWebRequest.Result.Success) {
+				Debug.LogError("Delete channel failed: " + www.error);
+			} else {
+				Debug.Log("Delete response: " + www.downloadHandler.text);
+				// Here you can check the response and confirm that the channel was deleted
+				// For example, deserialize JSON response and check status
+			}
 		}
 	}
 
@@ -136,7 +179,9 @@ public class ChannelMaster : MonoBehaviour {
 						typeof(ChannelSaveLoad.ChannelData), rawData);
 					PlayerPrefs.SetString("channel_data_" + channelId, d.ToString());
 
-					if (!myChannels.channelIds.Contains(channelId)) {
+					if (justDeletedChannels.Contains(channelId)) {
+						justDeletedChannels.Remove(channelId);
+					} else if (!myChannels.channelIds.Contains(channelId)) {
 						myChannels.channelIds.Add(channelId);
 						SaveChannelIds();
 					}
