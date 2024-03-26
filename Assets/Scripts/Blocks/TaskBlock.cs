@@ -116,6 +116,7 @@ public class TaskBlock : MonoBehaviour {
 		if (source) {
 			BlockMaster.instance.RecalculateBlocks();
 		}
+		BlockMaster.instance.SaveData();
 		Destroy(gameObject);
 	}
 	public void ToggleShowOptions(bool optionsOn) {
