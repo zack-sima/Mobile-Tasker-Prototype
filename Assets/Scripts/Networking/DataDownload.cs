@@ -8,7 +8,7 @@ public class DataDownload : MonoBehaviour {
 		StartCoroutine(GetDataCoroutine(channelId));
 	}
 	IEnumerator GetDataCoroutine(string channelId) {
-		BlockMaster.instance.SetLoadingScreen(true);
+		//BlockMaster.instance.SetLoadingScreen(true);
 
 		using (UnityWebRequest www = UnityWebRequest.Get(
 			DataUpload.dataURL + $"?channelId={channelId}")) {
@@ -25,28 +25,12 @@ public class DataDownload : MonoBehaviour {
 				if (rawData.Length == 0 || rawData.Length < 30 && rawData.Contains("not found")) {
 					Debug.LogWarning("could not retrieve channel!");
 				} else {
-					rawData = SanatizeJson(rawData);
-
-					ChannelSaveLoad.LoadChannelWithString(BlockMaster.instance, rawData);
-					BlockMaster.instance.DataDownloaded();
+					BlockMaster.instance.DataDownloaded(rawData);
+					//ChannelSaveLoad.LoadChannelWithString(BlockMaster.instance, rawData);
+					//BlockMaster.instance.DataDownloaded();
 				}
 			}
 		}
-		BlockMaster.instance.SetLoadingScreen(false);
-	}
-	public static string SanatizeJson(string rawData) {
-		//** sanitizing the json **
-		rawData = rawData[2..^2];
-		rawData = rawData.Replace(@"\\n", "\n");
-		rawData = rawData.Replace(@"\\t", "\t");
-		rawData = rawData.Replace("\\\"", "\"");
-
-		//actual " character literals
-		rawData = rawData.Replace("\\\\\"", "\\\"");
-
-		//actual \ character literals
-		rawData = rawData.Replace("\\\\", "\\");
-
-		return rawData;
+		//BlockMaster.instance.SetLoadingScreen(false);
 	}
 }

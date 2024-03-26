@@ -173,15 +173,13 @@ public class ChannelMaster : MonoBehaviour {
 				if (rawData.Length == 0 || rawData.Length < 30 && rawData.Contains("not found")) {
 					Debug.LogWarning("could not retrieve channel!");
 				} else {
-					rawData = DataDownload.SanatizeJson(rawData);
-
 					ChannelSaveLoad.ChannelData d = (ChannelSaveLoad.ChannelData)MyJsonUtility.FromJson(
 						typeof(ChannelSaveLoad.ChannelData), rawData);
-					PlayerPrefs.SetString("channel_data_" + channelId, d.ToString());
 
 					if (justDeletedChannels.Contains(channelId)) {
 						justDeletedChannels.Remove(channelId);
 					} else if (!myChannels.channelIds.Contains(channelId)) {
+						PlayerPrefs.SetString("channel_data_" + channelId, d.ToString());
 						myChannels.channelIds.Add(channelId);
 						SaveChannelIds();
 					}

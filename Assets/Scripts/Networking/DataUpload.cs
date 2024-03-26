@@ -7,7 +7,7 @@ public class DataUpload : MonoBehaviour {
 	public static DataUpload instance;
 
 	//temp task sheets url
-	public static string dataURL = "https://script.google.com/macros/s/AKfycbx5S478iOL3Fim9CT8NjDPfDjTZADEhXOUH1mgpuZG0pWtC9o2fNnfVahbzgrBUzhX46A/exec";
+	public static string dataURL = "https://script.google.com/macros/s/AKfycbxhJZZ9-qOoqL1kEyfkA7ieBi7nVqoVXCPueF-7JDR8iI3A3rFB0g0DE0_e4cm7p-p08w/exec";
 
 	public void SendData(string channelId, string jsonData) {
 		StartCoroutine(PostData(channelId, jsonData));

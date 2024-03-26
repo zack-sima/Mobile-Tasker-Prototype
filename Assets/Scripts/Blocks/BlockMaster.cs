@@ -45,6 +45,8 @@ public class BlockMaster : MonoBehaviour {
 
 	[SerializeField] private RectTransform optionsMenuBar, normalMenuBar;
 
+	[SerializeField] private RectTransform versionMismatchScreen;
+
 	[SerializeField] private RectTransform loadingScreen;
 	public void SetLoadingScreen(bool isOn) { loadingScreen.gameObject.SetActive(isOn); }
 
@@ -91,9 +93,15 @@ public class BlockMaster : MonoBehaviour {
 
 	private Vector2 mouseDownPosition = Vector2.zero;
 
+	//if version mismatch popup is enabled, this must be populated
+	private string onlineVersionJson = "";
+
+	//populated when savefile loading finished
+	private string offlineLoadedJson = "";
+
 	#endregion
 
-	#region Button Callbacks
+	#region Callbacks
 
 	public void ExitChannel() {
 		SaveData(autoSave: true);
@@ -105,6 +113,31 @@ public class BlockMaster : MonoBehaviour {
 	}
 	public void TryRedo() {
 		RedoStep();
+	}
+	//version mismatch handling
+	public void DataDownloaded(string json) {
+		//Debug.Log("downloaded online version:");
+		//Debug.Log(json);
+		//Debug.Log("vs");
+		//Debug.Log(offlineLoadedJson);
+
+		//online matches last edit
+		if (json == offlineLoadedJson) {
+			canUpload = true;
+			return;
+		}
+		//online doesn't match
+		onlineVersionJson = json;
+		versionMismatchScreen.gameObject.SetActive(true);
+	}
+	public void UseOnlineVersion() {
+		ChannelSaveLoad.LoadChannelWithString(this, onlineVersionJson);
+		versionMismatchScreen.gameObject.SetActive(false);
+		canUpload = true;
+	}
+	public void UseLocalVersion() {
+		versionMismatchScreen.gameObject.SetActive(false);
+		canUpload = true;
 	}
 	public void ShowNormalBar() {
 		optionsMenuBar.gameObject.SetActive(false);
@@ -263,11 +296,13 @@ public class BlockMaster : MonoBehaviour {
 		}
 	}
 
-	public void LoadData() {
+	private void LoadData() {
 		initializing = true;
 
 		//load channel
 		ChannelSaveLoad.LoadChannel(this, channelId);
+
+		offlineLoadedJson = ChannelSaveLoad.GetChannelData(channelId).ToString();
 
 		//automatically try to download from online regardless
 		TryDownloadData();
@@ -334,9 +369,6 @@ public class BlockMaster : MonoBehaviour {
 	public void TryDownloadData() {
 		//initialization skips this and downloads directly if local data doesn't exist
 		downloader.GetData(channelId);
-	}
-	public void DataDownloaded() {
-		canUpload = true;
 	}
 
 	#endregion

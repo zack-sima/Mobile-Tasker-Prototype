@@ -22,19 +22,18 @@ function doGet(e) {
   const channelId = e.parameter.channelId;
   const data = sheet.getDataRange().getValues(); // Fetch all the data in the sheet
   let found = false;
-  let requiredData = [];
+  let requiredData = "";
 
   // Loop through the data to find the row with the specified channelId
   for (let i = 0; i < data.length; i++) {
     if (data[i][0] === channelId) {
-      requiredData = [data[i][1]]; // Get the second column's value of the matched row
+      requiredData = data[i][1]; // Get the second column's value of the matched row
       found = true;
       break;
     }
   }
 
-  const json = JSON.stringify(found ? requiredData : 'Channel not found');
-  return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(requiredData).setMimeType(ContentService.MimeType.JSON);
 }
 
 // Modified POST request to update or append data based on channelId

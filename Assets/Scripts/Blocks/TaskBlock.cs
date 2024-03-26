@@ -46,6 +46,9 @@ public class TaskBlock : MonoBehaviour {
 	public bool GetIsFolded() { return isFolded; }
 	public void SetIsFolded(bool f) { isFolded = f; UpdateFold(); }
 
+	//if focus just changed (now not focused), re-adjust height (iOS cancel inputfield bug)
+	private bool inputWasFocused = false;
+
 	#endregion
 
 	#region References
@@ -97,7 +100,7 @@ public class TaskBlock : MonoBehaviour {
 	public void AddChildBlock() {
 		TaskBlock newBlock = BlockMaster.instance.CreateBlock(recalculate: false);
 		newBlock.SetParent(this);
-		children.Add(newBlock);
+		children.Insert(0, newBlock);
 		BlockMaster.instance.RecalculateBlocks();
 	}
 	public void DeleteBlock(bool source = true) {
@@ -148,14 +151,14 @@ public class TaskBlock : MonoBehaviour {
 		//save changes
 		BlockMaster.instance.SaveData();
 	}
-	public void OnInputFieldChanged(bool recalculate = true) {
-		StartCoroutine(WaitUpdateInputSize(recalculate));
+	public void OnInputFieldChanged(bool recalculate = true, bool forceRecalculate = false) {
+		StartCoroutine(WaitUpdateInputSize(recalculate, forceRecalculate));
 	}
-	private IEnumerator WaitUpdateInputSize(bool recalculate) {
+	private IEnumerator WaitUpdateInputSize(bool recalculate, bool forceRecalculate) {
 		yield return new WaitForEndOfFrame();
 		float oldHeight = height;
 		RecalculateHeight();
-		if (height != oldHeight) {
+		if (height != oldHeight || forceRecalculate) {
 			RectTransform rt = GetComponent<RectTransform>();
 			rt.sizeDelta = new Vector2(rt.sizeDelta.x, height);
 			if (recalculate)
@@ -272,7 +275,9 @@ public class TaskBlock : MonoBehaviour {
 		if (isDragged) {
 			UpdateDragging();
 		}
-		if (textInputField.isFocused)
-			OnInputFieldChanged();
+		if (textInputField.isFocused || inputWasFocused) {
+			OnInputFieldChanged(forceRecalculate: inputWasFocused && !textInputField.isFocused);
+		}
+		inputWasFocused = textInputField.isFocused;
 	}
 }
