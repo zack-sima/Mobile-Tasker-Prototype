@@ -104,9 +104,14 @@ public class BlockMaster : MonoBehaviour {
 	#region Callbacks
 
 	public void ExitChannel() {
-		SaveData(autoSave: true);
-		CreateLastBackup();
-		SceneManager.LoadScene(0);
+		try {
+			SaveData(autoSave: true);
+			CreateLastBackup();
+		} catch (System.Exception e) {
+			Debug.LogError(e);
+		} finally {
+			SceneManager.LoadScene(0);
+		}
 	}
 	public void TryUndo() {
 		UndoStep();
