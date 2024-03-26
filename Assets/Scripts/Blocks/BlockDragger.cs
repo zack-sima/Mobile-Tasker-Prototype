@@ -7,6 +7,8 @@ public class BlockDragger : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
 	[SerializeField] private TaskBlock taskBlock;
 
 	public void OnPointerDown(PointerEventData eventData) {
+		if (!BlockMaster.instance.GetShowOptions()) return;
+
 		taskBlock.SetIsDragged(true);
 		taskBlock.SetRelativeDragPosition(Input.mousePosition - taskBlock.transform.position);
 		taskBlock.GetComponent<RectTransform>().SetAsLastSibling();

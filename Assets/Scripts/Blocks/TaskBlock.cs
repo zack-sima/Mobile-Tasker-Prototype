@@ -54,6 +54,8 @@ public class TaskBlock : MonoBehaviour {
 	public string GetText() { return textInputField.text; }
 	public void SetText(string t) { textInputField.text = t; }
 
+	[SerializeField] private Image bulletPointImage;
+	[SerializeField] private Sprite bulletPointSprite, dragRowSprite;
 	[SerializeField] private TMP_Text invisibleTextSizer; //used to determine block height
 	[SerializeField] private Button foldButton;
 	[SerializeField] private List<Button> optionsButtons; //hidden unless options is toggled on
@@ -120,6 +122,7 @@ public class TaskBlock : MonoBehaviour {
 		foreach (Button b in optionsButtons) {
 			b.gameObject.SetActive(optionsOn);
 		}
+		bulletPointImage.sprite = optionsOn ? dragRowSprite : bulletPointSprite;
 		foldButton.gameObject.SetActive(children.Count != 0 && !optionsOn);
 	}
 	public void ToggleFold() {
