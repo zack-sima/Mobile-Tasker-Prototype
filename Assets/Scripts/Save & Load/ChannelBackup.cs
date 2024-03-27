@@ -67,6 +67,7 @@ public static class ChannelBackup {
 		} catch {
 			d = new();
 		}
+		d.backups ??= new();
 		string saveName = isAutoSave ? "[Autosave]" : "[Backup]";
 		saveName = isLastEdit ? "[Last Edit]" : saveName;
 		string backupId = $"{saveName} {System.DateTime.Now}";

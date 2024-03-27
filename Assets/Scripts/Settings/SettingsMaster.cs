@@ -16,6 +16,9 @@ public class SettingsMaster : MonoBehaviour {
 		SceneManager.LoadScene(0);
 	}
 	private void Awake() {
+		if (Application.isMobilePlatform) {
+			uiSizeSlider.minValue = -1;
+		}
 		uiSizeSlider.value = PlayerPrefs.GetFloat("ui_scale");
 	}
 }

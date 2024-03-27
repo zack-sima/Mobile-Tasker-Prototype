@@ -19,20 +19,20 @@ function doGet(e) {
     return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
   }
 
+   // Fetch specific channel data
   const channelId = e.parameter.channelId;
   const data = sheet.getDataRange().getValues(); // Fetch all the data in the sheet
-  let found = false;
+  const range = sheet.getDataRange();
+  const notes = range.getNotes(); // Fetch all notes
   let requiredData = "";
 
-  // Loop through the data to find the row with the specified channelId
+  // Loop through data to find the row with the specified channelId
   for (let i = 0; i < data.length; i++) {
     if (data[i][0] === channelId) {
-      requiredData = data[i][1]; // Get the second column's value of the matched row
-      found = true;
+      requiredData = notes[i][1];
       break;
     }
   }
-
   return ContentService.createTextOutput(requiredData).setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -68,18 +68,35 @@ function doPost(e) {
 
     // Loop through the sheet to find if the channelId exists
     for (let i = 0; i < data.length; i++) {
+      // Within the for-loop where you find the existing channelId:
       if (data[i][0] === channelId) {
-        // ChannelId found, update the corresponding second column
-        sheet.getRange(i + 1, 2).setValue(jsonData);
+        // Update the note in the second column instead of the cell value
+        sheet.getRange(i + 1, 2).setNote(jsonData);
+        //placeholder value to force query
+        sheet.getRange(i + 1, 2).setValue("a");
         found = true;
         break;
       }
+      /* For cell storage (replaced with notes) */
+      // if (data[i][0] === channelId) {
+      //   // ChannelId found, update the corresponding second column
+      //   sheet.getRange(i + 1, 2).setValue(jsonData);
+        
+      //   found = true;
+      //   break;
+      // }
     }
 
-    // If the channelId is not found, append a new row
+    // If the channelId is not found, append a new row and add the note:
     if (!found) {
-      sheet.appendRow([channelId, jsonData]);
+      const newRow = sheet.appendRow([channelId, ""]); // Leave cell value empty
+      const lastRow = sheet.getLastRow();
+      sheet.getRange(lastRow, 2).setNote(jsonData); // Set note in the second column
     }
+    /* For cell storage (replaced with notes) */
+    // if (!found) {
+    //   sheet.appendRow([channelId, jsonData]);
+    // }
 
     result = { 'status': 'success', 'row': sheet.getLastRow() };
   } catch (err) {

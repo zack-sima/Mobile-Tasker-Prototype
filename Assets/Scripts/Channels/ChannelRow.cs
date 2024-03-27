@@ -16,6 +16,9 @@ public class ChannelRow : MonoBehaviour {
 	public void SetTitle(string title) {
 		channelDisplay.text = title;
 	}
+	public string GetTitle() {
+		return channelDisplay.text;
+	}
 	public void SetChannel(string channel) {
 		channelName = channel;
 	}

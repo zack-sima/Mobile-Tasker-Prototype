@@ -5,6 +5,7 @@ using UnityEngine.Networking;
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System.Linq;
 
 public class ChannelMaster : MonoBehaviour {
 	public static ChannelMaster instance;
@@ -106,6 +107,10 @@ public class ChannelMaster : MonoBehaviour {
 				r.SetTitle(d.channelName);
 			}
 			channelRows.Add(r);
+		}
+		//sort channels alphabetically
+		foreach (ChannelRow r in channelRows.OrderBy(r => r.GetTitle())) {
+			r.transform.SetAsLastSibling();
 		}
 	}
 	//calls delete on remote
